@@ -23,15 +23,16 @@ class Game:
             print(buffer)
 
             key = self.getch()
-            if key == b'w':
+            print(str(key))
+            if key == 'w':
                 self.hero.y -= 1
-            elif key == b's':
+            elif key == 's':
                 self.hero.y += 1
-            elif key == b'a':
+            elif key == 'a':
                 self.hero.x -= 1
-            elif key == b'd':
+            elif key == 'd':
                 self.hero.x += 1
-            elif key == b'q':
+            elif key == 'q':
                 exit()
 
 game = Game()
