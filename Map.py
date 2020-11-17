@@ -1,27 +1,63 @@
+from Hero import Hero
+
 class Map:
-    _map = []
+    __map = []
+    __buffer = []
     mapWidth = -1
     mapHeight = -1
 
-    def __init__(self, mappath):
-        mapFile = open(mappath, "r")
+    __rW = 0
+    __rH = 0
+
+    def __init__(self, mapPath, renderDistance):
+        self.__rW = renderDistance
+        self.__rH = int(renderDistance / 2.5)
+
+        mapFile = open(mapPath, "r")
         
         fileWidth = len(mapFile.readline())
         for x in range(fileWidth - 1):
             mapFile.seek(0)
             mapColumn = []
+            bufferColumn = []
             for y in mapFile:
                 mapColumn.append(y[x])
-            self._map.append(mapColumn)
+                bufferColumn.append(" ")
+            self.__map.append(mapColumn)
+            self.__buffer.append(bufferColumn)
         
-        self.mapWidth = len(self._map)
-        self.mapHeight = len(self._map[0])
+        self.mapWidth = len(self.__map)
+        self.mapHeight = len(self.__map[0])
+
         mapFile.close()
 
-    def render(self):
-        buffer = ""
-        for y in range (self.mapHeight):
-            for x in range (self.mapWidth):
-                buffer += self._map[x][y]
-            buffer += "\n"
+    def render2D(self, hero):
+        buffer = "╔"
+        for x in range(self.__rW * 2):
+            buffer += "═"
+        buffer += "╗\n"
+
+        for y in range (hero.y - self.__rH, hero.y + self.__rH):
+            buffer += "║"
+            for x in range (hero.x - self.__rW, hero.x + self.__rW):
+                if x < 0 or y < 0 or x > self.mapWidth - 1 or y > self.mapHeight - 1:
+                    buffer += " "
+                elif self.__buffer[x][y] != " ":
+                    buffer += self.__buffer[x][y]
+                else:
+                    buffer += self.__map[x][y]
+            buffer += "║\n"
+
+        buffer += "╚"
+        for x in range(self.__rW * 2):
+            buffer += "═"
+        buffer += "╝"
         return buffer
+
+    def draw(self, char, x, y):
+        self.__buffer[x][y] = char
+
+    def clearBuffor(self):
+        for y in range(self.mapHeight):
+            for x in range(self.mapWidth):
+                self.__buffer[x][y] = " "
