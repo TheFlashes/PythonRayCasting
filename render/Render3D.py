@@ -1,49 +1,109 @@
 import math 
 
 class Render3D:
-    __rayLength = 20
-    __rayAngle = 45
+    __rayLength = 30
     __rayIncreaseStep = 1
+    __fov = 85
+    __bufferWidth = 120
+    __bufferHeigth = 40
+    __buffer = []
+    __wallHeight = 100
+
+    def __init__(self):
+        for _ in range(self.__bufferWidth):
+            bufferColumn = []
+            for _ in range(self.__bufferHeigth):
+                bufferColumn.append(" ")
+            self.__buffer.append(bufferColumn)
+
+    def clearBuffer(self):
+        for y in range(self.__bufferHeigth):
+            for x in range(self.__bufferWidth):
+                self.__buffer[x][y] = " "
+
 
     def render(self, hero, map):
+        rayAngleStart = hero.angle - self.__fov / 2
+        rayAngleEnd = hero.angle + self.__fov / 2
+        rayAngle = 0
+
         # Ray starting position
         rayStartX = hero.x
         rayStartY = hero.y
 
-        # Ray end position
-        rayAngleRad = math.radians(self.__rayAngle)
-        rayEndX = int(rayStartX + (self.__rayLength * math.cos(rayAngleRad)))
-        rayEndY = int(rayStartY + (self.__rayLength * math.sin(rayAngleRad)))
+        bufferColumn = 0
+
+        rayAngleIncreaseStep = self.__fov / self.__bufferWidth
+        print(rayAngleIncreaseStep)
+
+        for bufferColumn in range(self.__bufferWidth):
+            # Ray end position
+            rayAngleRad = math.radians(rayAngleStart)
+            rayEndX = int(rayStartX + (self.__rayLength * math.cos(rayAngleRad)))
+            rayEndY = int(rayStartY + (self.__rayLength * math.sin(rayAngleRad)))
+            
+            a = self.safeDiv(rayEndY - rayStartY, rayEndX - rayStartX)
+            b = rayStartY - a * rayStartX
+
+            rayXPos = 0
+            rayYPos = 0
+            hitWall = False
+
+            # Ray line formula: y = ax + b for angle 315-45 and 135-225
+            if rayAngle > 315 or rayAngle < 45 or (rayAngle > 135 and rayAngle < 225):
+                rayStep = self.__rayIncreaseStep if rayEndX > rayStartX else -self.__rayIncreaseStep
+                for xU in range(int(rayStartX * 10), int(rayEndX * 10), rayStep):
+                    rayXPos = xU / 10.0
+                    rayYPos = a * rayXPos + b
+                    if not map.freeAt(rayXPos, rayYPos):
+                        hitWall = True
+                        break
+            # Ray line formula: x = y/a - b/a for rest
+            else:
+                rayStep = self.__rayIncreaseStep if rayEndY > rayStartY else -self.__rayIncreaseStep
+                for yU in range(int(rayStartY * 10), int(rayEndY * 10), rayStep):
+                    rayYPos = yU / 10.0
+                    xPos = self.safeDiv(rayYPos, a) - self.safeDiv(b, a)
+                    rayXPos = xPos if xPos != 0 else rayEndX
+                    if not map.freeAt(rayXPos, rayYPos):
+                        hitWall = True
+                        break
+            
+            # The distance between the start of the ray (player) and the end of the ray, e.g. hitting a wall
+            # distance = √((Xa - Xb)² + (Ya - Yb)²)
+            rayLength = ((rayStartX - rayXPos)**2 + (rayStartY - rayYPos)**2)**(1/2)
+            
+            correction = math.cos(math.radians(self.__fov / 2.0 - rayAngle))
+            rayLength = rayLength * correction
+            wallHeight = self.__wallHeight / rayLength
+            drawStartHeigth = int(self.__bufferHeigth / 2 - wallHeight / 2)
+            for y in range(drawStartHeigth, drawStartHeigth + int(wallHeight)):
+                if y > self.__bufferHeigth - 1: continue
+                else:
+                    walTexture = "█"
+                    if wallHeight < 6: walTexture = "░"
+                    elif wallHeight < 12: walTexture = "▒"
+                    elif wallHeight < 19: walTexture = "▓"
+                    self.__buffer[bufferColumn][y] = walTexture if hitWall else " "
+
+            rayAngleStart += rayAngleIncreaseStep
+            rayAngle += rayAngleIncreaseStep
         
-        a = self.safeDiv(rayEndY - rayStartY, rayEndX - rayStartX)
-        b = rayStartY - a * rayStartX
-
-        # Ray line formula: y = ax + b for angle 315-45 and 135-225
-        if self.__rayAngle > 315 or self.__rayAngle < 45 or (self.__rayAngle > 135 and self.__rayAngle < 225):
-            rayStep = self.__rayIncreaseStep if rayEndX > rayStartX else -self.__rayIncreaseStep
-            for xU in range(rayStartX * 10, rayEndX * 10, rayStep):
-                x = xU / 10.0
-                y = a * x + b
-                if map.freeAt(x, y) == False:
-                    break
-                map.draw("o", int(x), int(y))
-        # Ray line formula: x = y/a - b/a for rest
-        else:
-            rayStep = self.__rayIncreaseStep if rayEndY > rayStartY else -self.__rayIncreaseStep
-            for yU in range(rayStartY * 10, rayEndY * 10, rayStep):
-                y = yU / 10.0
-                xPos = self.safeDiv(y, a) - self.safeDiv(b, a)
-                x = xPos if xPos != 0 else rayEndX
-                if map.freeAt(x, y) == False:
-                    break
-                map.draw("*", int(x), int(y))
-
-        self.rayAngleIncrease()
-
-    def rayAngleIncrease(self):
-        self.__rayAngle += 1
-        if self.__rayAngle > 360:
-            self.__rayAngle = 0
+        output = "╔"
+        for x in range(self.__bufferWidth):
+            output += "═"
+        output += "╗\n"
+        for y in range(self.__bufferHeigth):
+            output += "║"
+            for x in range(self.__bufferWidth):
+                output += self.__buffer[x][y]
+            output += "║\n"
+        output += "╚"
+        for x in range(self.__bufferWidth):
+            output += "═"
+        output += "╝"
+        return output
+        
 
     def safeDiv(self, num1, num2):
         if num1 == 0 or num2 == 0:

@@ -1,6 +1,7 @@
 class Hero:
-    x = 23
-    y = 11
+    x = 6
+    y = 8
     txt = '@'
+    angle = 0
 
     
