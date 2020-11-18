@@ -1,5 +1,3 @@
-from Hero import Hero
-
 class Map:
     __map = []
     __buffer = []
@@ -54,10 +52,26 @@ class Map:
         buffer += "╝"
         return buffer
 
-    def draw(self, char, x, y):
-        self.__buffer[x][y] = char
+    def freeAt(self, xF, yF):
+        x = int(xF)
+        y = int(yF)
+        if x < 0 or y < 0 or x >= self.mapWidth or y >= self.mapHeight:
+            return False
+        elif self.__map[x][y] == " ":
+            return True
+        else:
+            return False
+
+    def draw(self, str, x, y):
+        for ch in str:
+            if x < 0 or y < 0:
+                continue
+            if x >= self.mapWidth or y >= self.mapHeight:
+                break
+            self.__buffer[x][y] = ch
 
     def clearBuffor(self):
         for y in range(self.mapHeight):
             for x in range(self.mapWidth):
                 self.__buffer[x][y] = " "
+                

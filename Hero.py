@@ -1,6 +1,6 @@
 class Hero:
-    x = 10
-    y = 5
+    x = 23
+    y = 11
     txt = '@'
 
     
